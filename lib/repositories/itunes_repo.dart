@@ -9,10 +9,10 @@ class ITunesServiceRepository implements ITunesServiceRepositoryAB {
   ITunesServiceRepository({required this.service});
 
   @override
-  Future<MusicModel> fetchMusicVideos() async {
+  Future<MusicModel> searchMusicData(String query, String? entity) async {
     try {
       // Fetch data from service
-      MusicModel responseData = await service.fetchMusicData();
+      MusicModel responseData = await service.searchMusicData(query, entity);
       return responseData;
     } catch (e) {
       if (kDebugMode) {

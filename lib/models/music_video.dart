@@ -9,7 +9,8 @@ class MusicModel {
 
   factory MusicModel.fromJson(Map<String, dynamic> json) {
     var resultsList = json['results'] as List<dynamic>;
-    List<MusicVideo> musics = resultsList.map((e) => MusicVideo.fromJson(e)).toList();
+    List<MusicVideo> musics =
+        resultsList.map((e) => MusicVideo.fromJson(e)).toList();
 
     return MusicModel(
       resultCount: json['resultCount'] ?? 0,
@@ -48,6 +49,7 @@ class MusicVideo {
   final String country;
   final String currency;
   final String primaryGenreName;
+  final String longDescription;
 
   MusicVideo({
     required this.wrapperType,
@@ -79,6 +81,7 @@ class MusicVideo {
     required this.country,
     required this.currency,
     required this.primaryGenreName,
+    required this.longDescription,
   });
 
   factory MusicVideo.fromJson(Map<String, dynamic> json) {
@@ -112,6 +115,7 @@ class MusicVideo {
       country: handleStringType(json['country']),
       currency: handleStringType(json['currency']),
       primaryGenreName: handleStringType(json['primaryGenreName']),
+      longDescription: handleStringType(json['longDescription']),
     );
   }
 }

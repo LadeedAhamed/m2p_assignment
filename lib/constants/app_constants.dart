@@ -6,8 +6,7 @@ class ITunesAppConstants {
   static const String homeIcon = 'assets/images/apple-itunes.svg';
 
   // API Endpoints
-  static const String baseUrl =
-      "https://itunes.apple.com/search?term=jackjohnson&entity=musicVideo";
+  static const String baseUrl = "https://itunes.apple.com/search";
 
   // Colors
   static const Color primaryColor = Colors.black;

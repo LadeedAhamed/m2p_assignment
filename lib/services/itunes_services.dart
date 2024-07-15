@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
 import 'package:iTunes/constants/app_constants.dart';
+import 'package:dio/dio.dart';
 import 'package:iTunes/models/music_video.dart';
 
 class ITunesService {
@@ -13,23 +13,22 @@ class ITunesService {
         LogInterceptor(responseBody: true)); // Optional: For logging responses
   }
 
-  Future<MusicModel> fetchMusicData() async {
+  Future<MusicModel> searchMusicData(String query, String? entity) async {
     try {
-      const String apiUrl = ITunesAppConstants.baseUrl;
+      String apiUrl = "${ITunesAppConstants.baseUrl}?term=$query";
+      if (entity != null && entity.isNotEmpty) {
+        apiUrl += "&entity=$entity";
+      }
 
-      // Make GET request
       final response = await _dio.get(apiUrl);
-
-      // Check if response is successful
       if (response.statusCode == 200) {
-        // Decode JSON response
         final Map<String, dynamic> data = jsonDecode(response.data);
         return MusicModel.fromJson(data);
       } else {
-        throw Exception('Failed to load music data');
+        throw Exception('Failed to load music data: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Failed to load music data: $e');
+      throw Exception('Failed to search music data: $e');
     }
   }
 }

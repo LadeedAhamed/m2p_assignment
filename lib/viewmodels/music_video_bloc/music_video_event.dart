@@ -2,10 +2,9 @@ part of 'music_video_bloc.dart';
 
 abstract class MusicVideoEvent {}
 
-class FetchMusicVideos extends MusicVideoEvent {}
-
 class SearchMusicVideos extends MusicVideoEvent {
   final String query;
+  final String? entity;
 
-  SearchMusicVideos({required this.query});
+  SearchMusicVideos({required this.query, this.entity});
 }

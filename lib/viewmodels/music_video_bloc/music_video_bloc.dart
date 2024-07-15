@@ -1,61 +1,45 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iTunes/models/music_video.dart';
 import 'package:iTunes/repositories/itunes_repo.dart';
 
+import 'music_video_state.dart';
 part 'music_video_event.dart';
-part 'music_video_state.dart';
 
 class MusicVideoBloc extends Bloc<MusicVideoEvent, MusicVideoState> {
   final ITunesServiceRepository repository;
   List<MusicVideo> allMusicVideos = []; // Store all music videos
 
   MusicVideoBloc({required this.repository}) : super(MusicVideoInitial()) {
-    on<FetchMusicVideos>((event, emit) async {
-      await _mapFetchMusicVideosToState(event, emit);
-    });
-
     on<SearchMusicVideos>((event, emit) async {
-      await _mapSearchMusicVideosToState(event.query, emit);
+      await _mapSearchMusicVideosToState(event, emit);
     });
   }
 
-  Future<void> _mapFetchMusicVideosToState(
-    FetchMusicVideos event,
+  Future<void> _mapSearchMusicVideosToState(
+    SearchMusicVideos event,
     Emitter<MusicVideoState> emit,
   ) async {
     try {
       emit(MusicVideoLoading());
-      MusicModel musicVideos = await repository.fetchMusicVideos();
-      allMusicVideos =
-          musicVideos.musics; // Update allMusicVideos with fetched data
-      emit(MusicVideoLoaded(musicVideos));
-    } catch (e) {
-      emit(MusicVideoError('Failed to load music videos'));
-    }
-  }
 
-  Future<void> _mapSearchMusicVideosToState(
-    String query,
-    Emitter<MusicVideoState> emit,
-  ) async {
-    try {
-      if (query.isEmpty) {
-        emit(MusicVideoLoaded(MusicModel(
-            musics: allMusicVideos, resultCount: allMusicVideos.length)));
-      } else {
-        List<MusicVideo> filteredVideos = allMusicVideos
-            .where((musicVideo) =>
-                musicVideo.trackName
-                    .toLowerCase()
-                    .contains(query.toLowerCase()) ||
-                musicVideo.artistName
-                    .toLowerCase()
-                    .contains(query.toLowerCase()))
-            .toList();
-        emit(MusicVideoSearchLoaded(filteredVideos));
+      // Fetch music videos from the repository
+      MusicModel musicVideos =
+          await repository.searchMusicData(event.query, event.entity);
+
+      // Log the received music videos count
+      if (kDebugMode) {
+        print('Received music videos: ${musicVideos.musics.length}');
       }
+
+      // Directly assign musicVideos.musics to filteredVideos
+      List<MusicVideo> filteredVideos = musicVideos.musics;
+
+      // Emit the state with filtered videos
+      emit(MusicVideoSearchLoaded(filteredVideos));
     } catch (e) {
-      emit(MusicVideoError('Failed to search music videos'));
+      // Handle any errors
+      emit(MusicVideoError('Failed to search music videos: $e'));
     }
   }
 }

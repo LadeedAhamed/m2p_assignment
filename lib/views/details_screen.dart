@@ -96,6 +96,11 @@ class MusicVideoDetailsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 18.0),
             Text(
+              'Description: ${musicVideo.longDescription}',
+              style: ITunesAppConstants.subtitleStyle.copyWith(fontSize: 14.0),
+            ),
+            const SizedBox(height: 18.0),
+            Text(
               'Release Date: ${musicVideo.releaseDate}',
               style: ITunesAppConstants.subtitleStyle.copyWith(fontSize: 14.0),
             ),

@@ -1,6 +1,5 @@
 import 'package:iTunes/models/music_video.dart';
 
 abstract class ITunesServiceRepositoryAB {
-  Future<MusicModel> fetchMusicVideos();
-  
+  Future<MusicModel> searchMusicData(String query, String entities);
 }

@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iTunes/constants/app_constants.dart';
 import 'package:iTunes/models/music_video.dart';
 import 'package:iTunes/viewmodels/music_video_bloc/music_video_bloc.dart';
-import 'package:iTunes/views/components/music_video_listview.dart';
+import 'package:iTunes/viewmodels/music_video_bloc/music_video_state.dart';
 import 'package:iTunes/views/details_screen.dart';
 
 enum ViewMode { grid, list }
@@ -18,18 +18,36 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
   ViewMode _viewMode = ViewMode.grid;
+  String _selectedEntity = 'all';
 
   @override
   void initState() {
     super.initState();
-    // Trigger FetchMusicVideos event
-    context.read<MusicVideoBloc>().add(FetchMusicVideos());
+    _searchController.addListener(_onSearchChanged);
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onSearchChanged() {}
+
+  void _onSearchSubmitted() {
+    final query = _searchController.text;
+    if (query.isNotEmpty) {
+      if (_selectedEntity == 'all') {
+        // Call API without specifying entity
+        context.read<MusicVideoBloc>().add(SearchMusicVideos(query: query));
+      } else {
+        // Call API with entity
+        context
+            .read<MusicVideoBloc>()
+            .add(SearchMusicVideos(query: query, entity: _selectedEntity));
+      }
+    }
   }
 
   Map<String, List<MusicVideo>> groupMusicVideosByArtist(
@@ -55,23 +73,20 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           _buildSearchBar(),
+          _buildEntitySelection(),
           _buildViewModeToggle(),
           Expanded(
             child: BlocBuilder<MusicVideoBloc, MusicVideoState>(
               builder: (context, state) {
+                print('Current state: $state');
                 if (state is MusicVideoLoading) {
                   return const Center(child: CircularProgressIndicator());
-                } else if (state is MusicVideoLoaded) {
-                  var groupedMusicVideos =
-                      groupMusicVideosByArtist(state.musicVideos.musics);
-                  return ListView(
-                    children: groupedMusicVideos.entries.map((entry) {
-                      return _buildArtistSection(entry.key, entry.value);
-                    }).toList(),
-                  );
                 } else if (state is MusicVideoSearchLoaded) {
-                  return MusicVideoListView(
-                      musicVideos: state.filteredMusicVideos);
+                  print(
+                      'Filtered videos count: ${state.filteredMusicVideos.length}');
+                  return _viewMode == ViewMode.grid
+                      ? _buildGridView(state.filteredMusicVideos)
+                      : _buildListView(state.filteredMusicVideos);
                 } else if (state is MusicVideoError) {
                   return Center(child: Text(state.errorMessage));
                 } else {
@@ -88,23 +103,82 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: TextFormField(
-        controller: _searchController,
-        style: const TextStyle(color: Colors.white),
-        onChanged: (query) {
-          context
-              .read<MusicVideoBloc>()
-              .add(SearchMusicVideos(query: query)); // Trigger search event
-        },
-        decoration: InputDecoration(
-          hintStyle: ITunesAppConstants.subtitleStyle,
-          hintText: 'Search music...',
-          prefixIcon: const Icon(Icons.search),
-          border: OutlineInputBorder(
+      child: Row(
+        children: [
+          Expanded(
+            child: TextFormField(
+              controller: _searchController,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintStyle: ITunesAppConstants.subtitleStyle,
+                hintText: 'Search music...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: _onSearchSubmitted,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEntitySelection() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildEntityButton('all'),
+            _buildEntityButton('musicVideo'),
+            _buildEntityButton('song'),
+            _buildEntityButton('album'),
+            _buildEntityButton('movieArtist'),
+            _buildEntityButton('ebook'),
+            _buildEntityButton('podcast'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEntityButton(String entity) {
+    return TextButton(
+      style: ButtonStyle(
+        padding: WidgetStateProperty.all<EdgeInsets>(
+            const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0)),
+        backgroundColor: WidgetStateProperty.all<Color>(
+          _selectedEntity == entity ? Colors.white12 : Colors.transparent,
+        ),
+        shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+          RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8.0),
+            side: BorderSide(
+              color: _selectedEntity == entity
+                  ? Colors.white12
+                  : Colors.transparent,
+            ),
           ),
         ),
       ),
+      child: Text(
+        entity,
+        style: ITunesAppConstants.subtitleStyle.copyWith(
+          color: _selectedEntity == entity ? Colors.green : Colors.grey,
+        ),
+      ),
+      onPressed: () {
+        setState(() {
+          _selectedEntity = entity;
+        });
+      },
     );
   }
 
@@ -182,47 +256,92 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildArtistSection(String artistName, List<MusicVideo> musicVideos) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(
-            artistName,
-            style: ITunesAppConstants.subtitleStyle
-                .copyWith(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-        ),
-        _viewMode == ViewMode.grid
-            ? GridView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: musicVideos.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8.0,
-                  mainAxisSpacing: 8.0,
-                  childAspectRatio: 0.75,
-                ),
-                itemBuilder: (context, index) {
-                  MusicVideo musicVideo = musicVideos[index];
-                  return _buildMusicCard(musicVideo);
-                },
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: musicVideos.length,
-                itemBuilder: (context, index) {
-                  MusicVideo musicVideo = musicVideos[index];
-                  return _buildMusicListTile(musicVideo);
-                },
+  Widget _buildGridView(List<MusicVideo> musicVideos) {
+    print('Building grid view with ${musicVideos.length} videos');
+    Map<String, List<MusicVideo>> groupedVideos =
+        _groupMusicVideosByKind(musicVideos);
+    return ListView(
+      children: groupedVideos.entries.map((entry) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (entry.key.isNotEmpty)
+              Container(
+                width: double.infinity,
+                color: Colors.amberAccent,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4),
+                child: Text(entry.key, style: ITunesAppConstants.titleStyle),
               ),
-      ],
+            const SizedBox(
+              height: 10,
+            ),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: entry.value.length,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 8.0,
+                mainAxisSpacing: 8.0,
+                childAspectRatio: 0.75,
+              ),
+              itemBuilder: (context, index) {
+                MusicVideo musicVideo = entry.value[index];
+                return _buildMusicCard(musicVideo);
+              },
+            ),
+          ],
+        );
+      }).toList(),
     );
+  }
+
+  Widget _buildListView(List<MusicVideo> musicVideos) {
+    print('Building list view with ${musicVideos.length} videos');
+    Map<String, List<MusicVideo>> groupedVideos =
+        _groupMusicVideosByKind(musicVideos);
+    return ListView(
+      children: groupedVideos.entries.map((entry) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (entry.key.isNotEmpty)
+              Container(
+                width: double.infinity,
+                color: Colors.amberAccent,
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4),
+                child: Text(entry.key, style: ITunesAppConstants.titleStyle),
+              ),
+            const SizedBox(
+              height: 10,
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: entry.value.length,
+              itemBuilder: (context, index) {
+                MusicVideo musicVideo = entry.value[index];
+                return _buildMusicListTile(musicVideo);
+              },
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  Map<String, List<MusicVideo>> _groupMusicVideosByKind(
+      List<MusicVideo> musicVideos) {
+    Map<String, List<MusicVideo>> groupedVideos = {};
+    for (var musicVideo in musicVideos) {
+      if (!groupedVideos.containsKey(musicVideo.kind)) {
+        groupedVideos[musicVideo.kind] = [];
+      }
+      groupedVideos[musicVideo.kind]!.add(musicVideo);
+    }
+    return groupedVideos;
   }
 
   Widget _buildMusicCard(MusicVideo musicVideo) {
@@ -275,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildMusicListTile(MusicVideo musicVideo) {
     return ListTile(
       leading: Image.network(
-        musicVideo.artworkUrl30,
+        musicVideo.artworkUrl60,
         width: 50.0,
         height: 50.0,
         fit: BoxFit.cover,
