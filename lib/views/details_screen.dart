@@ -26,85 +26,92 @@ class MusicVideoDetailsScreen extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Image.network(
-                  height: 200,
-                  width: 150,
-                  musicVideo.artworkUrl60,
-                  fit: BoxFit.cover,
-                ),
-                const SizedBox(width: 16.0),
-                Flexible(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        musicVideo.trackName,
-                        style: ITunesAppConstants.subtitleStyle
-                            .copyWith(fontSize: 16.0, color: Colors.white),
-                      ),
-                      const SizedBox(height: 8.0),
-                      GestureDetector(
-                        onTap: () {
-                          launchUrl(Uri.parse(musicVideo.artistViewUrl));
-                        },
-                        child: Text(
-                          'Artist: ${musicVideo.artistName}',
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Image.network(
+                    height: 200,
+                    width: 150,
+                    musicVideo.artworkUrl60,
+                    fit: BoxFit.cover,
+                  ),
+                  const SizedBox(width: 16.0),
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          musicVideo.trackName,
                           style: ITunesAppConstants.subtitleStyle
-                              .copyWith(fontSize: 18.0, color: Colors.blue),
+                              .copyWith(fontSize: 16.0, color: Colors.white),
                         ),
-                      ),
-                      const SizedBox(height: 8.0),
-                      if (musicVideo.collectionName.isNotEmpty)
+                        const SizedBox(height: 8.0),
                         GestureDetector(
                           onTap: () {
-                            launchUrl(Uri.parse(musicVideo.collectionViewUrl));
+                            launchUrl(Uri.parse(musicVideo.artistViewUrl));
                           },
                           child: Text(
-                            'Collection: ${musicVideo.collectionName}',
+                            'Artist: ${musicVideo.artistName}',
                             style: ITunesAppConstants.subtitleStyle
                                 .copyWith(fontSize: 18.0, color: Colors.blue),
-                            maxLines:
-                                null, // Allow the text to wrap to the next line if needed
-                            overflow: TextOverflow.visible,
                           ),
                         ),
-                      const SizedBox(height: 8.0),
-                      Text(
-                        'Genre: ${musicVideo.primaryGenreName}',
-                        style: ITunesAppConstants.subtitleStyle
-                            .copyWith(fontSize: 16.0),
-                      ),
-                    ],
+                        const SizedBox(height: 8.0),
+                        if (musicVideo.collectionName.isNotEmpty)
+                          GestureDetector(
+                            onTap: () {
+                              launchUrl(
+                                  Uri.parse(musicVideo.collectionViewUrl));
+                            },
+                            child: Text(
+                              'Collection: ${musicVideo.collectionName}',
+                              style: ITunesAppConstants.subtitleStyle
+                                  .copyWith(fontSize: 18.0, color: Colors.blue),
+                              maxLines:
+                                  null, // Allow the text to wrap to the next line if needed
+                              overflow: TextOverflow.visible,
+                            ),
+                          ),
+                        const SizedBox(height: 8.0),
+                        Text(
+                          'Genre: ${musicVideo.primaryGenreName}',
+                          style: ITunesAppConstants.subtitleStyle
+                              .copyWith(fontSize: 16.0),
+                        ),
+                      ],
+                    ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 18.0),
+              Text(
+                'Preview',
+                style:
+                    ITunesAppConstants.subtitleStyle.copyWith(fontSize: 16.0),
+              ),
+              const SizedBox(height: 18.0),
+              VideoPlayerScreen(
+                videoUrl: musicVideo.previewUrl,
+              ),
+              const SizedBox(height: 18.0),
+              if (musicVideo.longDescription.isNotEmpty)
+                Text(
+                  'Description: ${musicVideo.longDescription}',
+                  style:
+                      ITunesAppConstants.subtitleStyle.copyWith(fontSize: 14.0),
                 ),
-              ],
-            ),
-            const SizedBox(height: 18.0),
-            Text(
-              'Preview',
-              style: ITunesAppConstants.subtitleStyle.copyWith(fontSize: 16.0),
-            ),
-            const SizedBox(height: 18.0),
-            VideoPlayerScreen(
-              videoUrl: musicVideo.previewUrl,
-            ),
-            const SizedBox(height: 18.0),
-            Text(
-              'Description: ${musicVideo.longDescription}',
-              style: ITunesAppConstants.subtitleStyle.copyWith(fontSize: 14.0),
-            ),
-            const SizedBox(height: 18.0),
-            Text(
-              'Release Date: ${musicVideo.releaseDate}',
-              style: ITunesAppConstants.subtitleStyle.copyWith(fontSize: 14.0),
-            ),
-          ],
+              const SizedBox(height: 18.0),
+              Text(
+                'Release Date: ${musicVideo.releaseDate}',
+                style:
+                    ITunesAppConstants.subtitleStyle.copyWith(fontSize: 14.0),
+              ),
+            ],
+          ),
         ),
       ),
     );
